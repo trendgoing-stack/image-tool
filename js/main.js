@@ -10,6 +10,9 @@ import { showToast } from './ui/toast.js'
 
 const $ = (id) => document.getElementById(id)
 
+/** 画面下に表示するバージョン。更新が反映されたかの確認に使う */
+const APP_VERSION = '0.2.1'
+
 let selectedFiles = []
 /** 成功した処理結果 { file, result } の一覧 */
 let processed = []
@@ -150,6 +153,7 @@ async function runProcess() {
 }
 
 function init() {
+  $('app-version').textContent = `バージョン ${APP_VERSION}`
   initSettingsForm(defaultSettings())
   initCompare()
 
