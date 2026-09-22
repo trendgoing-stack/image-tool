@@ -28,7 +28,7 @@
       <h2>1. 画像を選ぶ</h2>
       <label class="button primary file-button">
         画像を選択
-        <input id="file-input" type="file" accept="image/*" hidden>
+        <input id="file-input" type="file" accept="image/*" multiple hidden>
       </label>
       <p id="file-summary" class="muted">まだ選択されていません</p>
     </section>
@@ -89,6 +89,13 @@
           <input id="quality" type="range" min="10" max="100" step="1">
           <output id="quality-value"></output>
         </label>
+        <label class="check"><input id="target-enabled" type="checkbox"> 目標ファイルサイズを指定</label>
+        <div id="target-row">
+          <label class="field">
+            <input id="target-kb" type="number" inputmode="numeric" min="1" step="1"> KB 以下
+          </label>
+          <p class="hint">目標以下になる、いちばん高い画質を自動で探します（上の画質が上限になります）</p>
+        </div>
         <p class="hint png-reason" hidden>PNGは画質を指定できない形式のため、画質の設定は使われません</p>
       </fieldset>
 
@@ -108,11 +115,45 @@
 
     <section class="card">
       <h2>3. 処理と保存</h2>
-      <button id="process-button" class="button primary" type="button" disabled>処理する</button>
+      <div class="row">
+        <button id="process-button" class="button primary" type="button" disabled>処理する</button>
+        <button id="cancel-button" class="button" type="button" hidden>中止</button>
+      </div>
+      <div id="progress-wrap" hidden>
+        <progress id="progress-bar" max="1" value="0"></progress>
+      </div>
       <p id="progress" class="muted" aria-live="polite"></p>
+
+      <div id="bulk" class="bulk" hidden>
+        <p id="bulk-summary" class="bulk-summary"></p>
+        <div class="bulk-actions">
+          <button id="share-all-button" class="button" type="button">まとめて共有</button>
+          <button id="zip-button" class="button" type="button">ZIPで保存</button>
+        </div>
+        <p class="hint">「まとめて共有」→「画像を保存」で写真アプリへ。ZIPはファイルアプリに保存するときに使います</p>
+      </div>
+
       <ul id="results" class="results"></ul>
     </section>
   </main>
+
+  <div id="compare" class="compare" hidden>
+    <div class="compare-header">
+      <span id="compare-title" class="compare-title"></span>
+      <button id="compare-close" class="button small" type="button">閉じる</button>
+    </div>
+    <div class="compare-stage" id="compare-stage">
+      <img id="compare-after" alt="処理後">
+      <img id="compare-before" alt="処理前">
+      <div class="compare-divider" id="compare-divider"></div>
+      <span class="compare-label left">処理前</span>
+      <span class="compare-label right">処理後</span>
+    </div>
+    <div class="compare-footer">
+      <input id="compare-slider" type="range" min="0" max="100" value="50" aria-label="処理前と処理後の境目">
+      <p id="compare-info" class="hint"></p>
+    </div>
+  </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 </body>

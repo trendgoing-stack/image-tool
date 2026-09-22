@@ -28,6 +28,8 @@ export function readSettings() {
     },
     format: radio('format'),
     quality: $('quality').value,
+    targetSizeEnabled: $('target-enabled').checked,
+    targetSizeKB: $('target-kb').value,
     background: radio('background'),
     backgroundCustom: $('background-custom').value,
   })
@@ -45,6 +47,8 @@ export function writeSettings(settings) {
   $('no-enlarge').checked = s.resize.noEnlarge
   setRadio('format', s.format)
   $('quality').value = s.quality
+  $('target-enabled').checked = s.targetSizeEnabled
+  $('target-kb').value = s.targetSizeKB
   setRadio('background', s.background)
   $('background-custom').value = s.backgroundCustom
   refresh()
@@ -64,6 +68,8 @@ function refresh() {
   }
 
   $('quality-value').textContent = `${s.quality}%`
+  $('quality-label').textContent = s.targetSizeEnabled ? '画質（上限）' : '画質'
+  $('target-row').hidden = !s.targetSizeEnabled
 
   // PNG 出力のときは JPEG 用の設定を無効化し、理由を表示する
   const isPng = s.format === 'png'
