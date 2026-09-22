@@ -11,7 +11,7 @@ import { initPresetsPanel } from './ui/presetsPanel.js'
 import { loadLastSettings, saveLastSettings } from './settings/presets.js'
 import { registerServiceWorker } from './sw-register.js'
 import { APP_VERSION } from './version.js'
-import { getEditTarget, initEditor } from './editor/editor.js'
+import { clearEditor, getEditTarget, initEditor } from './editor/editor.js'
 
 const $ = (id) => document.getElementById(id)
 
@@ -45,6 +45,10 @@ function setRunning(isRunning) {
   $('file-input').disabled = isRunning
   $('edit-file-input').disabled = isRunning
   for (const input of document.querySelectorAll('input[name="app-mode"]')) input.disabled = isRunning
+  $('batch-clear').hidden = selectedFiles.length === 0
+  $('edit-clear').hidden = !getEditTarget()
+  $('batch-clear').disabled = isRunning
+  $('edit-clear').disabled = isRunning
 }
 
 async function saveOne(result) {
@@ -174,6 +178,35 @@ function initHelp() {
   $('help-close').addEventListener('click', () => dialog.close())
 }
 
+function updateFileSummary() {
+  const total = selectedFiles.reduce((sum, f) => sum + f.size, 0)
+  $('file-summary').textContent =
+    selectedFiles.length === 0
+      ? 'まだ選択されていません'
+      : selectedFiles.length === 1
+        ? `${selectedFiles[0].name}（${formatBytes(total)}）`
+        : `${selectedFiles.length}枚（合計 ${formatBytes(total)}）`
+}
+
+/** 選んだ画像・加工・処理結果をクリアして、画像を選ぶ前の状態に戻す（設定とプリセットは残す） */
+function clearSelection() {
+  if (running) return
+  const edited = mode === 'edit' && (getEditTarget()?.edits.length ?? 0) > 0
+  if ((processed.length > 0 || edited) && !confirm('選んだ画像と、編集内容・処理結果をクリアしますか？\n（元の写真は削除されません。保存していない処理結果は消えます）')) {
+    return
+  }
+  if (mode === 'edit') {
+    clearEditor()
+  } else {
+    selectedFiles = []
+    $('file-input').value = ''
+    updateFileSummary()
+  }
+  resetOutput()
+  setRunning(false)
+  $(mode === 'edit' ? 'editor-section' : 'batch-section').scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 function setMode(next) {
   mode = next
   $('batch-section').hidden = mode !== 'batch'
@@ -202,17 +235,13 @@ function init() {
 
   $('file-input').addEventListener('change', (e) => {
     selectedFiles = Array.from(e.target.files ?? [])
-    const total = selectedFiles.reduce((sum, f) => sum + f.size, 0)
-    $('file-summary').textContent =
-      selectedFiles.length === 0
-        ? 'まだ選択されていません'
-        : selectedFiles.length === 1
-          ? `${selectedFiles[0].name}（${formatBytes(total)}）`
-          : `${selectedFiles.length}枚（合計 ${formatBytes(total)}）`
+    updateFileSummary()
     setRunning(false)
     resetOutput()
   })
   $('process-button').addEventListener('click', runProcess)
+  $('batch-clear').addEventListener('click', clearSelection)
+  $('edit-clear').addEventListener('click', clearSelection)
   $('cancel-button').addEventListener('click', () => {
     if (running) running.cancelled = true
     $('progress').textContent = '中止しています…（処理中の1枚が終わると止まります）'

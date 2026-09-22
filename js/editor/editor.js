@@ -402,6 +402,25 @@ export function getEditTarget() {
   return file ? { file, edits: history.ops } : null
 }
 
+/** 画像と加工をすべて取り消して、画像を選ぶ前の状態に戻す */
+export function clearEditor() {
+  file = null
+  history.reset()
+  selectedId = null
+  gesture = null
+  pointers.clear()
+  releaseCanvas(base)
+  releaseCanvas(areaCache)
+  base = null
+  areaCache = null
+  areaOpsInCache = []
+  for (const c of [canvas(), overlay()]) releaseCanvas(c)
+  $('editor').hidden = true
+  $('edit-file-input').value = ''
+  $('edit-file-summary').textContent = 'まだ選択されていません'
+  updateControls()
+}
+
 /**
  * @param {{ onFileChange?: (file: File | null) => void }} [handlers]
  */

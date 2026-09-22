@@ -384,6 +384,10 @@ progress { width: 100%; height: 6px; margin-top: 10px; accent-color: var(--accen
 .help-body p, .help-body ul, .help-body ol { margin: 6px 0; }
 .help-body ul, .help-body ol { padding-left: 1.3em; }
 
+.summary-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.summary-row .muted { margin: 0; min-width: 0; word-break: break-all; }
+.summary-row .button { flex-shrink: 0; }
+
 .mode-switch { margin-bottom: 12px; }
 .mode-switch span { padding: 9px 4px; font-size: 15px; }
 .segmented.small span { font-size: 13px; padding: 6px 4px; }

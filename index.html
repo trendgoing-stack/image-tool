@@ -48,7 +48,10 @@
         画像を選択
         <input id="edit-file-input" type="file" accept="image/*" hidden>
       </label>
-      <p id="edit-file-summary" class="muted">まだ選択されていません</p>
+      <div class="summary-row">
+        <p id="edit-file-summary" class="muted">まだ選択されていません</p>
+        <button id="edit-clear" class="button small" type="button" hidden>選択を解除</button>
+      </div>
 
       <div id="editor" class="editor" hidden>
         <div class="editor-history">
@@ -129,7 +132,10 @@
         画像を選択
         <input id="file-input" type="file" accept="image/*" multiple hidden>
       </label>
-      <p id="file-summary" class="muted">まだ選択されていません</p>
+      <div class="summary-row">
+        <p id="file-summary" class="muted">まだ選択されていません</p>
+        <button id="batch-clear" class="button small" type="button" hidden>選択を解除</button>
+      </div>
     </section>
 
     <section class="card" id="settings">
