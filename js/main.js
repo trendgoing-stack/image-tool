@@ -7,11 +7,12 @@ import { createZip, zipFileName } from './output/zip.js'
 import { clearResults, formatBytes, renderError, renderResult, savingText } from './ui/resultList.js'
 import { initCompare, openCompare } from './ui/compare.js'
 import { showToast } from './ui/toast.js'
+import { initPresetsPanel } from './ui/presetsPanel.js'
+import { loadLastSettings, saveLastSettings } from './settings/presets.js'
+import { registerServiceWorker } from './sw-register.js'
+import { APP_VERSION } from './version.js'
 
 const $ = (id) => document.getElementById(id)
-
-/** 画面下に表示するバージョン。更新が反映されたかの確認に使う */
-const APP_VERSION = '0.2.1'
 
 let selectedFiles = []
 /** 成功した処理結果 { file, result } の一覧 */
@@ -152,10 +153,23 @@ async function runProcess() {
   updateBulk()
 }
 
+function initHelp() {
+  const dialog = $('help')
+  $('help-button').addEventListener('click', () => {
+    dialog.showModal()
+    dialog.querySelector('.help-body').scrollTop = 0
+  })
+  $('help-close').addEventListener('click', () => dialog.close())
+}
+
 function init() {
   $('app-version').textContent = `バージョン ${APP_VERSION}`
-  initSettingsForm(defaultSettings())
+  // 前回の設定を復元し、変更のたびに保存する
+  initSettingsForm(loadLastSettings() ?? defaultSettings(), saveLastSettings)
+  initPresetsPanel()
   initCompare()
+  initHelp()
+  registerServiceWorker()
 
   $('file-input').addEventListener('change', (e) => {
     selectedFiles = Array.from(e.target.files ?? [])

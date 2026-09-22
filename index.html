@@ -5,14 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
   <meta name="description" content="画像のリサイズ・圧縮・形式変換を端末内だけで行うアプリ">
+  <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="画像変換">
   <title>画像かんたん変換</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <link rel="stylesheet" href="./css/app.css">
   <script type="module" src="./js/main.js"></script>
 </head>
 <body>
   <header class="app-header">
     <h1>画像かんたん変換</h1>
+    <button id="help-button" class="button small" type="button">ヘルプ</button>
   </header>
+
+  <button id="update-banner" class="update-banner" type="button" hidden>更新があります（タップで再読み込み）</button>
 
   <main class="app-main">
     <section class="card notice" aria-label="ご注意">
@@ -36,6 +48,19 @@
     <section class="card" id="settings">
       <h2>2. 設定</h2>
 
+      <div class="presets">
+        <div class="preset-header">
+          <span class="preset-title">プリセット</span>
+          <span id="preset-empty" class="hint">まだありません</span>
+        </div>
+        <div id="preset-list" class="preset-list"></div>
+        <form id="preset-form" class="preset-form">
+          <input id="preset-name" type="text" maxlength="30" placeholder="名前を付けて今の設定を保存" enterkeyhint="done" autocomplete="off">
+          <button class="button small" type="submit">保存</button>
+        </form>
+      </div>
+
+      <div id="settings-form">
       <fieldset>
         <legend>リサイズ</legend>
         <div class="segmented" role="radiogroup">
@@ -111,6 +136,7 @@
         </label>
         <p class="hint png-reason" hidden>PNGは透過をそのまま保つため、背景色は使われません</p>
       </fieldset>
+      </div>
     </section>
 
     <section class="card">
@@ -156,6 +182,55 @@
       <p id="compare-info" class="hint"></p>
     </div>
   </div>
+
+  <dialog id="help" class="help" aria-labelledby="help-title">
+    <div class="help-header">
+      <h2 id="help-title">ヘルプ</h2>
+      <button id="help-close" class="button small" type="button">閉じる</button>
+    </div>
+    <div class="help-body">
+      <h3>使い方</h3>
+      <ol>
+        <li>「画像を選択」で写真を選びます（複数まとめて選べます）</li>
+        <li>リサイズ・出力形式・画質などを設定します</li>
+        <li>「処理する」を押し、終わったら「保存」を押します</li>
+      </ol>
+      <p>「保存」を押すと共有シートが開きます。「画像を保存」で写真アプリに、「"ファイル"に保存」でファイルアプリに保存されます。2枚以上なら「まとめて共有」や「ZIPで保存」も使えます。</p>
+
+      <h3>プライバシーについて</h3>
+      <ul>
+        <li>画像はすべてこの端末の中で処理され、インターネットには送信されません。アクセス解析なども使っていません</li>
+        <li>一度開けば、機内モードなど電波のない状態でも使えます</li>
+      </ul>
+
+      <h3>保存した画像について</h3>
+      <ul>
+        <li>位置情報・撮影日時・カメラの機種などの<strong>EXIF情報はすべて削除</strong>されます</li>
+        <li>写真アプリに保存すると撮影日時が失われるため、<strong>保存した日の写真</strong>として並びます</li>
+        <li>元の写真は削除も変更もされません。不要なら写真アプリで削除してください</li>
+        <li>出力の色空間はsRGBです。iPhoneで撮った写真（Display P3）は、鮮やかな赤や緑などがわずかに変わることがあります</li>
+      </ul>
+
+      <h3>大きな画像の自動縮小</h3>
+      <p>iPhoneのSafariは一度に扱える画像の大きさに上限（約1,677万画素、4096×4096相当）があります。これを超える場合は自動で縮小してお知らせします。iPhone標準の24MP・48MPの写真は、リサイズなしでも縮小されます（例：5712×4284 → 約4729×3547）。</p>
+
+      <h3>目標ファイルサイズ</h3>
+      <p>指定したサイズ以下になる最も高い画質を自動で探します。画質スライダーの値が上限です。最低画質（10%）でも届かない場合は、画像を小さくリサイズしてください。PNGはこの設定を使えません。</p>
+
+      <h3>読み込めない画像</h3>
+      <p>ファイルアプリから選んだHEIC形式の画像などは、読み込めないことがあります。写真アプリ（写真ライブラリ）から選ぶと、自動でJPEGに変換されて読み込めます。</p>
+
+      <h3>ホーム画面に追加する</h3>
+      <ol>
+        <li>Safariでこのページを開きます</li>
+        <li>共有ボタン（□に↑のアイコン）→「ホーム画面に追加」をタップします</li>
+      </ol>
+      <p><strong>ご注意：</strong>Safariで開いた場合とホーム画面から起動した場合では、保存されるプリセットが<strong>別々</strong>になります。ふだん使うほうで保存してください。</p>
+
+      <h3>アップデート</h3>
+      <p>新しいバージョンがあると、画面上部に「更新があります」と表示されます。タップすると最新版に切り替わります。</p>
+    </div>
+  </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 </body>

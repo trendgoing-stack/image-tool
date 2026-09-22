@@ -51,7 +51,7 @@ export function writeSettings(settings) {
   $('target-kb').value = s.targetSizeKB
   setRadio('background', s.background)
   $('background-custom').value = s.backgroundCustom
-  refresh()
+  changed()
 }
 
 /** 選択に応じて表示・無効化を切り替える */
@@ -82,7 +82,11 @@ function refresh() {
   $('custom-color-row').hidden = s.background !== 'custom'
 }
 
-export function initSettingsForm(initial) {
+/**
+ * @param {object} initial 最初に表示する設定
+ * @param {(settings: object) => void} [onChange] 設定が変わるたびに呼ばれる（前回の設定の保存に使う）
+ */
+export function initSettingsForm(initial, onChange) {
   const presets = $('long-edge-presets')
   for (const value of LONG_EDGE_PRESETS) {
     const btn = document.createElement('button')
@@ -91,11 +95,20 @@ export function initSettingsForm(initial) {
     btn.textContent = `${value}px`
     btn.addEventListener('click', () => {
       $('long-edge').value = value
-      refresh()
+      changed()
     })
     presets.appendChild(btn)
   }
-  $('settings').addEventListener('input', refresh)
-  $('settings').addEventListener('change', refresh)
+  changeListener = onChange ?? null
+  const form = $('settings-form')
+  form.addEventListener('input', changed)
+  form.addEventListener('change', changed)
   writeSettings(initial)
+}
+
+let changeListener = null
+
+function changed() {
+  refresh()
+  changeListener?.(readSettings())
 }
