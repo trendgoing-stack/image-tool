@@ -384,6 +384,54 @@ progress { width: 100%; height: 6px; margin-top: 10px; accent-color: var(--accen
 .help-body p, .help-body ul, .help-body ol { margin: 6px 0; }
 .help-body ul, .help-body ol { padding-left: 1.3em; }
 
+.mode-switch { margin-bottom: 12px; }
+.mode-switch span { padding: 9px 4px; font-size: 15px; }
+.segmented.small span { font-size: 13px; padding: 6px 4px; }
+
+.editor { margin-top: 12px; }
+.editor-intro { margin: 0 0 10px; }
+.editor-history { display: flex; gap: 6px; margin-bottom: 8px; }
+.editor-history .button { flex: 1; padding: 0 6px; }
+.editor-stage {
+  position: relative;
+  margin: 0 auto 10px;
+  background: var(--seg-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  /* 編集中にページのスクロール・ズームが起きないようにする */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.editor-stage canvas { display: block; width: 100%; height: 100%; }
+.editor-stage .edit-overlay { position: absolute; inset: 0; }
+.editor-options { margin-top: 10px; }
+.editor-options .caution { color: var(--warn-text); background: var(--warn-bg); padding: 6px 8px; border-radius: 8px; }
+.editor-options textarea {
+  width: 100%;
+  margin-top: 10px;
+  font: inherit;
+  font-size: 16px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  resize: vertical;
+}
+.editor-options select {
+  font: inherit;
+  font-size: 16px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+}
+#text-add { width: 100%; }
+.button.danger { color: var(--error-text); margin-top: 12px; }
+
 .app-version { text-align: center; color: var(--muted); font-size: 12px; margin: 16px 0 0; }
 
 .toast {

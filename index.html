@@ -36,7 +36,94 @@
       </ul>
     </section>
 
-    <section class="card">
+    <div class="segmented mode-switch" role="radiogroup" aria-label="モード">
+      <label><input type="radio" name="app-mode" value="batch" checked><span>まとめて処理</span></label>
+      <label><input type="radio" name="app-mode" value="edit"><span>1枚を編集</span></label>
+    </div>
+
+    <section class="card" id="editor-section" hidden>
+      <h2>1. 画像を選んで編集</h2>
+      <p class="hint editor-intro">ぼかし・モザイク・塗りつぶし・文字入れができます。編集した画像は、下の設定でリサイズ・圧縮して保存します。</p>
+      <label class="button primary file-button">
+        画像を選択
+        <input id="edit-file-input" type="file" accept="image/*" hidden>
+      </label>
+      <p id="edit-file-summary" class="muted">まだ選択されていません</p>
+
+      <div id="editor" class="editor" hidden>
+        <div class="editor-history">
+          <button id="edit-undo" class="button small" type="button" aria-label="元に戻す">↶ 戻す</button>
+          <button id="edit-redo" class="button small" type="button" aria-label="やり直す">↷ やり直す</button>
+          <button id="edit-reset" class="button small" type="button">全リセット</button>
+        </div>
+
+        <div id="editor-stage" class="editor-stage">
+          <canvas id="edit-canvas"></canvas>
+          <canvas id="edit-overlay" class="edit-overlay"></canvas>
+        </div>
+        <p id="editor-loading" class="muted" hidden>読み込み中…</p>
+
+        <div class="segmented" role="radiogroup" aria-label="ツール">
+          <label><input type="radio" name="edit-tool" value="blur" checked><span>ぼかし</span></label>
+          <label><input type="radio" name="edit-tool" value="mosaic"><span>モザイク</span></label>
+          <label><input type="radio" name="edit-tool" value="fill"><span>塗りつぶし</span></label>
+          <label><input type="radio" name="edit-tool" value="text"><span>文字</span></label>
+        </div>
+
+        <div id="area-options" class="editor-options">
+          <div class="segmented small" role="radiogroup" aria-label="範囲の指定方法">
+            <label><input type="radio" name="edit-shape" value="rect" checked><span>四角で囲む</span></label>
+            <label><input type="radio" name="edit-shape" value="brush"><span>ブラシでなぞる</span></label>
+          </div>
+          <label class="field slider" id="strength-row">
+            <span>強さ</span>
+            <input id="edit-strength" type="range" min="1" max="10" step="1" value="3">
+            <output id="edit-strength-value"></output>
+          </label>
+          <label class="field slider" id="brush-row">
+            <span>太さ</span>
+            <input id="edit-brush" type="range" min="2" max="15" step="1" value="5">
+            <output id="edit-brush-value"></output>
+          </label>
+          <label class="field" id="fill-color-row">色
+            <input id="edit-fill-color" type="color" value="#000000">
+          </label>
+          <p class="hint" id="area-hint"></p>
+          <p class="hint caution">確実に隠したい情報（住所・番号・顔など）には<strong>塗りつぶし</strong>をおすすめします。ぼかし・モザイクは読みにくくはなりますが、完全に隠せるとは限りません。</p>
+        </div>
+
+        <div id="text-options" class="editor-options" hidden>
+          <button id="text-add" class="button" type="button">＋ 文字を追加</button>
+          <p id="text-none" class="hint">追加した文字をタップすると選択でき、ドラッグで移動、2本指で大きさを変えられます</p>
+          <div id="text-panel" hidden>
+            <textarea id="text-content" rows="2" placeholder="文字を入力（改行できます）"></textarea>
+            <label class="field">フォント
+              <select id="text-font"></select>
+            </label>
+            <label class="field slider">
+              <span>大きさ</span>
+              <input id="text-size" type="range" min="2" max="30" step="0.5">
+              <output id="text-size-value"></output>
+            </label>
+            <label class="field">文字色
+              <input id="text-color" type="color">
+            </label>
+            <label class="field">縁取りの色
+              <input id="text-stroke-color" type="color">
+            </label>
+            <label class="field slider">
+              <span>縁取りの太さ</span>
+              <input id="text-stroke-width" type="range" min="0" max="20" step="1">
+              <output id="text-stroke-width-value"></output>
+            </label>
+            <label class="check"><input id="text-band" type="checkbox"> 半透明の背景帯</label>
+            <button id="text-delete" class="button small danger" type="button">この文字を削除</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="batch-section">
       <h2>1. 画像を選ぶ</h2>
       <label class="button primary file-button">
         画像を選択
@@ -196,6 +283,16 @@
         <li>「処理する」を押し、終わったら「保存」を押します</li>
       </ol>
       <p>「保存」を押すと共有シートが開きます。「画像を保存」で写真アプリに、「"ファイル"に保存」でファイルアプリに保存されます。2枚以上なら「まとめて共有」や「ZIPで保存」も使えます。</p>
+
+      <h3>1枚を編集（ぼかし・モザイク・文字入れ）</h3>
+      <ul>
+        <li>上の「1枚を編集」に切り替えて画像を選ぶと、ぼかし・モザイク・塗りつぶし・文字入れができます</li>
+        <li>範囲は「四角で囲む」（斜めにドラッグ）か「ブラシでなぞる」で指定します</li>
+        <li>文字は「＋ 文字を追加」で追加し、ドラッグで移動、2本指で大きさを変えられます。タップすると選び直して編集・削除できます</li>
+        <li>文字は、ぼかし・モザイク・塗りつぶしより常に上に表示されます</li>
+        <li>編集後は「編集した画像を処理する」を押すと、設定のリサイズ・圧縮をして保存できます。編集は元の解像度（大きすぎる写真は自動縮小後の解像度）で行われます</li>
+        <li><strong>確実に隠したい情報には塗りつぶしを使ってください。</strong>ぼかし・モザイクは読みにくくしますが、完全に隠せるとは限りません</li>
+      </ul>
 
       <h3>プライバシーについて</h3>
       <ul>

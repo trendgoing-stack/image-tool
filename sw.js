@@ -8,7 +8,7 @@
  *  3. 画面に「更新があります」を出し、タップされたら新しい SW に切り替えて再読み込みする
  *  4. 切り替わった SW が古いバージョンのキャッシュを削除する
  */
-const VERSION = '0.3.1'
+const VERSION = '0.4.0'
 const CACHE_PREFIX = 'image-tool-'
 const CACHE_NAME = `${CACHE_PREFIX}v${VERSION}`
 
@@ -27,6 +27,12 @@ const ASSETS = [
   './js/core/limits.js',
   './js/core/pipeline.js',
   './js/core/resize.js',
+  './js/editor/editor.js',
+  './js/editor/mosaic.js',
+  './js/editor/ops.js',
+  './js/editor/render.js',
+  './js/editor/stackblur.js',
+  './js/editor/text.js',
   './js/output/naming.js',
   './js/output/share.js',
   './js/output/zip.js',

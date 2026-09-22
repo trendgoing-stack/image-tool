@@ -4,7 +4,8 @@
 import { decodeImage } from './decode.js'
 import { computeTargetSize, drawResized } from './resize.js'
 import { canvasToBlob, encodeToTargetSize, extensionOf, fillBackground, resolveOutputType } from './encode.js'
-import { createCanvas, releaseCanvas } from './limits.js'
+import { clampToCanvasLimit, createCanvas, releaseCanvas } from './limits.js'
+import { renderEdits } from '../editor/render.js'
 import { backgroundColorOf } from '../settings/model.js'
 import { outputFileName } from '../output/naming.js'
 
@@ -30,7 +31,8 @@ async function makeThumbnail(source, width, height) {
 /**
  * @param {File} file
  * @param {object} settings normalizeSettings 済みの設定
- * @param {{ thumbnails?: boolean }} [options]
+ * @param {{ thumbnails?: boolean, edits?: object[] }} [options]
+ *   edits: 編集モードの加工リスト（editor/render.js を参照）
  * @returns {Promise<{
  *   name: string, blob: Blob, type: string,
  *   width: number, height: number, srcWidth: number, srcHeight: number,
@@ -44,9 +46,22 @@ export async function processImage(file, settings, options = {}) {
   try {
     const target = computeTargetSize(decoded.width, decoded.height, settings.resize)
     const thumbBefore = options.thumbnails ? await makeThumbnail(decoded.source, decoded.width, decoded.height) : null
-    canvas = drawResized(decoded.source, decoded.width, decoded.height, target.width, target.height)
-    // 描き終えたらデコード結果はすぐ手放す
-    decoded.close()
+    if (options.edits?.length) {
+      // 編集モード：canvas の上限内で最大の解像度（通常は元の解像度）で加工してから縮小する
+      const work = clampToCanvasLimit(decoded.width, decoded.height)
+      const workCanvas = drawResized(decoded.source, decoded.width, decoded.height, work.width, work.height)
+      decoded.close()
+      try {
+        renderEdits(workCanvas, options.edits)
+        canvas = drawResized(workCanvas, work.width, work.height, target.width, target.height)
+      } finally {
+        releaseCanvas(workCanvas)
+      }
+    } else {
+      canvas = drawResized(decoded.source, decoded.width, decoded.height, target.width, target.height)
+      // 描き終えたらデコード結果はすぐ手放す
+      decoded.close()
+    }
 
     const type = resolveOutputType(file, settings.format)
     let blob

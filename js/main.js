@@ -11,6 +11,7 @@ import { initPresetsPanel } from './ui/presetsPanel.js'
 import { loadLastSettings, saveLastSettings } from './settings/presets.js'
 import { registerServiceWorker } from './sw-register.js'
 import { APP_VERSION } from './version.js'
+import { getEditTarget, initEditor } from './editor/editor.js'
 
 const $ = (id) => document.getElementById(id)
 
@@ -20,6 +21,12 @@ let processed = []
 /** 共有が「ユーザー操作の直後ではない」と拒否されたときのために作っておいた ZIP */
 let preparedZip = null
 let running = null
+/** 'batch'（まとめて処理）| 'edit'（1枚を編集） */
+let mode = 'batch'
+
+function hasInput() {
+  return mode === 'edit' ? Boolean(getEditTarget()) : selectedFiles.length > 0
+}
 
 function resetOutput() {
   clearResults($('results'))
@@ -32,10 +39,12 @@ function resetOutput() {
 }
 
 function setRunning(isRunning) {
-  $('process-button').disabled = isRunning || selectedFiles.length === 0
-  $('process-button').textContent = isRunning ? '処理中…' : '処理する'
-  $('cancel-button').hidden = !isRunning
+  $('process-button').disabled = isRunning || !hasInput()
+  $('process-button').textContent = isRunning ? '処理中…' : mode === 'edit' ? '編集した画像を処理する' : '処理する'
+  $('cancel-button').hidden = !isRunning || mode === 'edit'
   $('file-input').disabled = isRunning
+  $('edit-file-input').disabled = isRunning
+  for (const input of document.querySelectorAll('input[name="app-mode"]')) input.disabled = isRunning
 }
 
 async function saveOne(result) {
@@ -111,9 +120,12 @@ async function saveZip() {
 }
 
 async function runProcess() {
-  if (selectedFiles.length === 0 || running) return
+  if (!hasInput() || running) return
   resetOutput()
-  const files = selectedFiles.slice()
+  const target = mode === 'edit' ? getEditTarget() : null
+  const files = target ? [target.file] : selectedFiles.slice()
+  // 編集モードでは、その時点の加工リストを使う（処理中に編集しても影響しない）
+  const options = target ? { edits: target.edits } : {}
   const settings = readSettings()
   const signal = { cancelled: false }
   running = signal
@@ -140,7 +152,7 @@ async function runProcess() {
     onError(file, err) {
       $('results').appendChild(renderError(file, err))
     },
-  })
+  }, options)
 
   running = null
   setRunning(false)
@@ -162,8 +174,25 @@ function initHelp() {
   $('help-close').addEventListener('click', () => dialog.close())
 }
 
+function setMode(next) {
+  mode = next
+  $('batch-section').hidden = mode !== 'batch'
+  $('editor-section').hidden = mode !== 'edit'
+  resetOutput()
+  setRunning(false)
+}
+
 function init() {
   $('app-version').textContent = `バージョン ${APP_VERSION}`
+  initEditor({
+    onFileChange() {
+      resetOutput()
+      setRunning(false)
+    },
+  })
+  for (const input of document.querySelectorAll('input[name="app-mode"]')) {
+    input.addEventListener('change', () => setMode(input.value))
+  }
   // 前回の設定を復元し、変更のたびに保存する
   initSettingsForm(loadLastSettings() ?? defaultSettings(), saveLastSettings)
   initPresetsPanel()
