@@ -8,7 +8,7 @@
  *  3. 画面に「更新があります」を出し、タップされたら新しい SW に切り替えて再読み込みする
  *  4. 切り替わった SW が古いバージョンのキャッシュを削除する
  */
-const VERSION = '0.3.0'
+const VERSION = '0.3.1'
 const CACHE_PREFIX = 'image-tool-'
 const CACHE_NAME = `${CACHE_PREFIX}v${VERSION}`
 
