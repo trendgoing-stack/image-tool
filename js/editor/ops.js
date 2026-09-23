@@ -1,13 +1,20 @@
 /**
- * 加工リストと、元に戻す（Undo）／やり直す（Redo）の履歴。
+ * 編集の状態と、元に戻す（Undo）／やり直す（Redo）の履歴。
+ * 状態 = { geometry: 回転・反転・切り取り, ops: 加工リスト }
  * 加工は非破壊で、リストとして記録しておき、保存時に元の画像へ順に適用する。
- * 各状態は変更しない配列として扱い、変更のたびに新しい配列を履歴に積む。
+ * 各状態は変更しないオブジェクトとして扱い、変更のたびに新しい状態を履歴に積む。
  */
+import { identityGeometry } from './geometry.js'
+
 const MAX_HISTORY = 100
 
 let nextId = 1
 export function newId() {
   return nextId++
+}
+
+function initialState() {
+  return { geometry: identityGeometry(), ops: [] }
 }
 
 export class EditHistory {
@@ -16,13 +23,21 @@ export class EditHistory {
   }
 
   reset() {
-    this.states = [[]]
+    this.states = [initialState()]
     this.index = 0
     this.lastMergeKey = null
   }
 
-  get ops() {
+  get state() {
     return this.states[this.index]
+  }
+
+  get ops() {
+    return this.state.ops
+  }
+
+  get geometry() {
+    return this.state.geometry
   }
 
   get canUndo() {
@@ -33,21 +48,34 @@ export class EditHistory {
     return this.index < this.states.length - 1
   }
 
+  /** 回転・切り取りも加工もしていない状態に戻す（Undo で元に戻せる） */
+  clearAll() {
+    this.commitState(initialState())
+  }
+
   /**
    * 新しい状態を記録する（やり直し用の履歴は捨てる）。
    * mergeKey が直前と同じなら、履歴を増やさずに直前の状態を置き換える
    * （文字の入力やスライダー操作で、1文字・1目盛りごとに Undo が必要にならないように）。
    */
-  commit(ops, mergeKey = null) {
+  commitState(state, mergeKey = null) {
     if (mergeKey && mergeKey === this.lastMergeKey && this.index > 0 && this.index === this.states.length - 1) {
-      this.states[this.index] = ops
+      this.states[this.index] = state
       return
     }
     this.states = this.states.slice(0, this.index + 1)
-    this.states.push(ops)
+    this.states.push(state)
     if (this.states.length > MAX_HISTORY + 1) this.states.shift()
     this.index = this.states.length - 1
     this.lastMergeKey = mergeKey
+  }
+
+  commit(ops, mergeKey = null) {
+    this.commitState({ ...this.state, ops }, mergeKey)
+  }
+
+  commitGeometry(geometry, mergeKey = null) {
+    this.commitState({ ...this.state, geometry }, mergeKey)
   }
 
   add(op) {

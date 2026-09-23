@@ -18,7 +18,7 @@ function yieldToBrowser() {
  *   onError?: (file: File, error: Error, index: number) => void,
  *   signal?: { cancelled: boolean },
  * }} handlers
- * @param {{ edits?: object[] }} [options] processImage に渡す（編集モードの加工リスト）
+ * @param {{ edit?: object }} [options] processImage に渡す（編集モードの回転・切り取りと加工リスト）
  * @returns {Promise<{ done: number, failed: number, cancelled: boolean }>}
  */
 export async function processBatch(files, settings, handlers = {}, options = {}) {

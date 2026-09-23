@@ -129,7 +129,7 @@ async function runProcess() {
   const target = mode === 'edit' ? getEditTarget() : null
   const files = target ? [target.file] : selectedFiles.slice()
   // 編集モードでは、その時点の加工リストを使う（処理中に編集しても影響しない）
-  const options = target ? { edits: target.edits } : {}
+  const options = target ? { edit: target.edit } : {}
   const settings = readSettings()
   const signal = { cancelled: false }
   running = signal
@@ -191,7 +191,7 @@ function updateFileSummary() {
 /** 選んだ画像・加工・処理結果をクリアして、画像を選ぶ前の状態に戻す（設定とプリセットは残す） */
 function clearSelection() {
   if (running) return
-  const edited = mode === 'edit' && (getEditTarget()?.edits.length ?? 0) > 0
+  const edited = mode === 'edit' && Boolean(getEditTarget()?.edited)
   if ((processed.length > 0 || edited) && !confirm('選んだ画像と、編集内容・処理結果をクリアしますか？\n（元の写真は削除されません。保存していない処理結果は消えます）')) {
     return
   }

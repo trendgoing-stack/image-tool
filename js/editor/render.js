@@ -1,16 +1,18 @@
 /**
  * 加工リストを canvas に適用する。プレビュー（縮小画像）と保存（元の解像度）で同じ関数を使う。
  *
- * 加工の座標・大きさは画像に対する割合で持つ（解像度によらない）：
+ * 加工の座標・大きさは「元の画像」に対する割合で持つ（解像度・回転・切り取りによらない）：
  *   範囲（四角）: { kind: 'area', effect, shape: 'rect', x, y, w, h }         … 0〜1
  *   範囲（ブラシ）: { kind: 'area', effect, shape: 'brush', points: [[x, y], …], brush }
- *                   brush はブラシの太さ（短辺に対する割合）
+ *                   brush はブラシの太さ（元の画像の短辺に対する割合）
  *   effect: 'blur' | 'mosaic' | 'fill'、strength: 1〜10（ぼかし・モザイク）、color（塗りつぶし）
  *   文字: { kind: 'text', … }（text.js を参照）
  *
+ * canvas 上の位置への変換は view（geometry.js の makeView）が行う。
  * 文字は常に、ぼかし・モザイク・塗りつぶしの上に描く。
  */
 import { createCanvas, releaseCanvas } from '../core/limits.js'
+import { rectToPx } from './geometry.js'
 import { blurImageData } from './stackblur.js'
 import { mosaicRegion } from './mosaic.js'
 import { drawText } from './text.js'
@@ -21,50 +23,56 @@ export const STRENGTH_MAX = 10
 /**
  * ぼかしの半径（px）。最低強度でも文字や顔が判読しにくい強さを下限にしている。
  * 短辺の 1.5%（強度1）〜 6%（強度10）。ガウスぼかしの標準偏差に相当する
+ * @param {number} unit 元の画像の短辺が canvas 上で何 px か
  */
-export function blurRadiusPx(strength, minSide) {
-  return Math.max(6, minSide * (0.015 + 0.005 * (strength - 1)))
+export function blurRadiusPx(strength, unit) {
+  return Math.max(6, unit * (0.015 + 0.005 * (strength - 1)))
 }
 
 /** モザイクのブロックの大きさ（px）。短辺の 2.5%（強度1）〜 8%（強度10） */
-export function mosaicBlockPx(strength, minSide) {
-  return Math.max(8, minSide * (0.025 + 0.006 * (strength - 1)))
+export function mosaicBlockPx(strength, unit) {
+  return Math.max(8, unit * (0.025 + 0.006 * (strength - 1)))
 }
 
 /** ぼかしは縮小してからかけると速い。この半径を超える場合は縮小して計算する */
 const BLUR_WORK_RADIUS = 16
 
-function areaBounds(op, width, height) {
-  const minSide = Math.min(width, height)
+function areaBounds(op, view) {
   let x0
   let y0
   let x1
   let y1
   if (op.shape === 'rect') {
-    x0 = op.x * width
-    y0 = op.y * height
-    x1 = (op.x + op.w) * width
-    y1 = (op.y + op.h) * height
+    const r = rectToPx(view, op)
+    x0 = r.x
+    y0 = r.y
+    x1 = r.x + r.w
+    y1 = r.y + r.h
   } else {
-    const half = (op.brush * minSide) / 2
-    const xs = op.points.map((p) => p[0] * width)
-    const ys = op.points.map((p) => p[1] * height)
-    x0 = Math.min(...xs) - half
-    y0 = Math.min(...ys) - half
-    x1 = Math.max(...xs) + half
-    y1 = Math.max(...ys) + half
+    const half = (op.brush * view.unit) / 2
+    const pts = op.points.map(([u, v]) => view.toPx(u, v))
+    x0 = Infinity
+    y0 = Infinity
+    x1 = -Infinity
+    y1 = -Infinity
+    for (const [x, y] of pts) {
+      x0 = Math.min(x0, x - half)
+      y0 = Math.min(y0, y - half)
+      x1 = Math.max(x1, x + half)
+      y1 = Math.max(y1, y + half)
+    }
   }
+  // 切り取りで範囲の外に出た部分は描かない
   x0 = Math.max(0, Math.floor(x0))
   y0 = Math.max(0, Math.floor(y0))
-  x1 = Math.min(width, Math.ceil(x1))
-  y1 = Math.min(height, Math.ceil(y1))
+  x1 = Math.min(view.width, Math.ceil(x1))
+  y1 = Math.min(view.height, Math.ceil(y1))
   if (x1 - x0 < 1 || y1 - y0 < 1) return null
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
 }
 
 /** 範囲 (b) に効果をかけた画像を作る（大きさ b.w×b.h） */
-function effectCanvas(canvas, op, b) {
-  const minSide = Math.min(canvas.width, canvas.height)
+function effectCanvas(canvas, op, b, unit) {
   if (op.effect === 'fill') {
     const out = createCanvas(b.w, b.h)
     const ctx = out.getContext('2d')
@@ -73,11 +81,11 @@ function effectCanvas(canvas, op, b) {
     return out
   }
   if (op.effect === 'mosaic') {
-    return mosaicRegion(canvas, b.x, b.y, b.w, b.h, mosaicBlockPx(op.strength, minSide))
+    return mosaicRegion(canvas, b.x, b.y, b.w, b.h, mosaicBlockPx(op.strength, unit))
   }
 
   // ぼかし：範囲の外側の画素も使ってぼかすため、半径の分だけ広げて計算する
-  const radius = blurRadiusPx(op.strength, minSide)
+  const radius = blurRadiusPx(op.strength, unit)
   const pad = Math.ceil(radius * 3)
   const px0 = Math.max(0, b.x - pad)
   const py0 = Math.max(0, b.y - pad)
@@ -102,10 +110,13 @@ function effectCanvas(canvas, op, b) {
   return out
 }
 
-/** ブラシの軌跡を、範囲 b の左上を原点として描く */
-function strokeBrush(ctx, op, b, width, height) {
-  const lineWidth = op.brush * Math.min(width, height)
-  const pts = op.points.map(([x, y]) => [x * width - b.x, y * height - b.y])
+/** ブラシの軌跡を、(ox, oy) を原点として描く */
+function strokeBrush(ctx, op, view, ox = 0, oy = 0) {
+  const lineWidth = op.brush * view.unit
+  const pts = op.points.map(([u, v]) => {
+    const [x, y] = view.toPx(u, v)
+    return [x - ox, y - oy]
+  })
   if (pts.length === 1) {
     ctx.beginPath()
     ctx.arc(pts[0][0], pts[0][1], lineWidth / 2, 0, Math.PI * 2)
@@ -122,17 +133,17 @@ function strokeBrush(ctx, op, b, width, height) {
 }
 
 /** ぼかし・モザイク・塗りつぶしを 1つ適用する */
-export function applyAreaOp(canvas, op) {
-  const b = areaBounds(op, canvas.width, canvas.height)
+export function applyAreaOp(canvas, op, view) {
+  const b = areaBounds(op, view)
   if (!b) return
-  const effect = effectCanvas(canvas, op, b)
+  const effect = effectCanvas(canvas, op, b, view.unit)
   if (op.shape === 'brush') {
     // ブラシの形に切り抜く
     const ectx = effect.getContext('2d')
     ectx.globalCompositeOperation = 'destination-in'
     ectx.fillStyle = '#000'
     ectx.strokeStyle = '#000'
-    strokeBrush(ectx, op, b, canvas.width, canvas.height)
+    strokeBrush(ectx, op, view, b.x, b.y)
   }
   const ctx = canvas.getContext('2d')
   ctx.save()
@@ -142,18 +153,18 @@ export function applyAreaOp(canvas, op) {
   releaseCanvas(effect)
 }
 
-/** 画面表示用：ブラシの軌跡を、画像全体の座標でなぞる（操作中の目印に使う） */
-export function traceBrush(ctx, op, width, height) {
-  strokeBrush(ctx, op, { x: 0, y: 0 }, width, height)
+/** 画面表示用：ブラシの軌跡をなぞる（操作中の目印に使う） */
+export function traceBrush(ctx, op, view) {
+  strokeBrush(ctx, op, view)
 }
 
-export function drawTexts(canvas, ops) {
+export function drawTexts(canvas, ops, view) {
   const ctx = canvas.getContext('2d')
-  for (const op of ops) if (op.kind === 'text') drawText(ctx, op, canvas.width, canvas.height)
+  for (const op of ops) if (op.kind === 'text') drawText(ctx, op, view)
 }
 
 /** 加工リスト全体を適用する（範囲の加工を順に → 文字を順に） */
-export function renderEdits(canvas, ops) {
-  for (const op of ops) if (op.kind === 'area') applyAreaOp(canvas, op)
-  drawTexts(canvas, ops)
+export function renderEdits(canvas, ops, view) {
+  for (const op of ops) if (op.kind === 'area') applyAreaOp(canvas, op, view)
+  drawTexts(canvas, ops, view)
 }

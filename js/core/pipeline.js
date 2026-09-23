@@ -6,6 +6,7 @@ import { computeTargetSize, drawResized } from './resize.js'
 import { canvasToBlob, encodeToTargetSize, extensionOf, fillBackground, resolveOutputType } from './encode.js'
 import { clampToCanvasLimit, createCanvas, releaseCanvas } from './limits.js'
 import { renderEdits } from '../editor/render.js'
+import { croppedSize, isFullCrop, isIdentityGeometry, makeView } from '../editor/geometry.js'
 import { backgroundColorOf } from '../settings/model.js'
 import { outputFileName } from '../output/naming.js'
 
@@ -31,8 +32,8 @@ async function makeThumbnail(source, width, height) {
 /**
  * @param {File} file
  * @param {object} settings normalizeSettings 済みの設定
- * @param {{ thumbnails?: boolean, edits?: object[] }} [options]
- *   edits: 編集モードの加工リスト（editor/render.js を参照）
+ * @param {{ thumbnails?: boolean, edit?: { geometry: object, ops: object[] } }} [options]
+ *   edit: 編集モードの回転・切り取り（editor/geometry.js）と加工リスト（editor/render.js）
  * @returns {Promise<{
  *   name: string, blob: Blob, type: string,
  *   width: number, height: number, srcWidth: number, srcHeight: number,
@@ -44,16 +45,25 @@ export async function processImage(file, settings, options = {}) {
   const decoded = await decodeImage(file)
   let canvas = null
   try {
-    const target = computeTargetSize(decoded.width, decoded.height, settings.resize)
+    const edit = options.edit
+    const editing = Boolean(edit && (edit.ops.length > 0 || !isIdentityGeometry(edit.geometry)))
+    // 切り取った場合は、切り取ったあとの大きさを「元の大きさ」としてリサイズする
+    const base = editing ? croppedSize(edit.geometry, decoded.width, decoded.height) : decoded
+    const baseW = Math.max(1, Math.round(base.width))
+    const baseH = Math.max(1, Math.round(base.height))
+    const target = computeTargetSize(baseW, baseH, settings.resize)
     const thumbBefore = options.thumbnails ? await makeThumbnail(decoded.source, decoded.width, decoded.height) : null
-    if (options.edits?.length) {
-      // 編集モード：canvas の上限内で最大の解像度（通常は元の解像度）で加工してから縮小する
-      const work = clampToCanvasLimit(decoded.width, decoded.height)
-      const workCanvas = drawResized(decoded.source, decoded.width, decoded.height, work.width, work.height)
+    if (editing) {
+      // 編集モード：回転・切り取りした範囲を、元の写真から直接 canvas の上限内で最大の解像度で描き、
+      // そこに加工を適用してから縮小する（大きな写真でも、切り取った範囲が上限内なら元の解像度のまま）
+      const work = clampToCanvasLimit(baseW, baseH)
+      const view = makeView(edit.geometry, decoded.width, decoded.height, work.width / base.width)
+      const workCanvas = createCanvas(view.width, view.height)
+      view.drawSource(workCanvas.getContext('2d'), decoded.source)
       decoded.close()
       try {
-        renderEdits(workCanvas, options.edits)
-        canvas = drawResized(workCanvas, work.width, work.height, target.width, target.height)
+        renderEdits(workCanvas, edit.ops, view)
+        canvas = drawResized(workCanvas, view.width, view.height, target.width, target.height)
       } finally {
         releaseCanvas(workCanvas)
       }
@@ -86,7 +96,12 @@ export async function processImage(file, settings, options = {}) {
     return {
       thumbBefore,
       thumbAfter,
-      name: outputFileName(file.name, { ...target, ext: extensionOf(type) }),
+      // 切り取った場合も大きさが変わるので、ファイル名に長辺の px を付ける
+      name: outputFileName(file.name, {
+        ...target,
+        resized: target.resized || (editing && !isFullCrop(edit.geometry.crop)),
+        ext: extensionOf(type),
+      }),
       blob,
       type,
       width: target.width,

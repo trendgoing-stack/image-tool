@@ -66,11 +66,29 @@
         </div>
         <p id="editor-loading" class="muted" hidden>読み込み中…</p>
 
-        <div class="segmented" role="radiogroup" aria-label="ツール">
+        <div class="segmented tools" role="radiogroup" aria-label="ツール">
+          <label><input type="radio" name="edit-tool" value="crop"><span>回転・切取</span></label>
           <label><input type="radio" name="edit-tool" value="blur" checked><span>ぼかし</span></label>
           <label><input type="radio" name="edit-tool" value="mosaic"><span>モザイク</span></label>
           <label><input type="radio" name="edit-tool" value="fill"><span>塗りつぶし</span></label>
           <label><input type="radio" name="edit-tool" value="text"><span>文字</span></label>
+        </div>
+
+        <div id="crop-options" class="editor-options" hidden>
+          <div class="rotate-buttons">
+            <button id="rotate-left" class="button small" type="button">⟲ 左に回転</button>
+            <button id="rotate-right" class="button small" type="button">⟳ 右に回転</button>
+            <button id="flip-h" class="button small" type="button">⇆ 左右反転</button>
+            <button id="flip-v" class="button small" type="button">⇅ 上下反転</button>
+          </div>
+          <p class="option-title">切り取りの比率</p>
+          <div id="crop-ratios" class="ratio-grid" role="radiogroup" aria-label="切り取りの比率"></div>
+          <p class="hint">用途は目安です。SNSの推奨サイズは変わることがあります</p>
+          <div class="crop-info">
+            <span id="crop-size" class="muted"></span>
+            <button id="crop-reset" class="button small" type="button">切り取りを解除</button>
+          </div>
+          <p class="hint">枠の四隅（比率が「自由」のときは辺も）をドラッグして範囲を調整します。枠の中をドラッグすると移動します。</p>
         </div>
 
         <div id="area-options" class="editor-options">
@@ -290,9 +308,13 @@
       </ol>
       <p>「保存」を押すと共有シートが開きます。「画像を保存」で写真アプリに、「"ファイル"に保存」でファイルアプリに保存されます。2枚以上なら「まとめて共有」や「ZIPで保存」も使えます。</p>
 
-      <h3>1枚を編集（ぼかし・モザイク・文字入れ）</h3>
+      <h3>1枚を編集（回転・切り取り・ぼかし・モザイク・文字入れ）</h3>
       <ul>
-        <li>上の「1枚を編集」に切り替えて画像を選ぶと、ぼかし・モザイク・塗りつぶし・文字入れができます</li>
+        <li>上の「1枚を編集」に切り替えて画像を選ぶと、回転・反転・切り取り、ぼかし・モザイク・塗りつぶし・文字入れができます</li>
+        <li>「回転・切取」では、90°ずつの回転と左右・上下の反転、切り取りができます。切り取りの比率には、SNSなどの用途の目安を表示しています</li>
+        <li>ぼかしや文字は、回転・切り取りしたあとの画像に入れます。先に入れてから回転・切り取りしても、写真の同じ場所に残ります（切り取りで範囲の外に出た部分は保存されません）</li>
+        <li>回転しても、文字は画面上でまっすぐのままです</li>
+        <li>大きな写真（48MPなど）でも、切り取った範囲が約1,677万画素以内なら、元の解像度のまま保存できます</li>
         <li>範囲は「四角で囲む」（斜めにドラッグ）か「ブラシでなぞる」で指定します</li>
         <li>文字は「＋ 文字を追加」で追加し、ドラッグで移動、2本指で大きさを変えられます。タップすると選び直して編集・削除できます</li>
         <li>文字は、ぼかし・モザイク・塗りつぶしより常に上に表示されます</li>

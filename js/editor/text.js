@@ -1,8 +1,9 @@
 /**
  * 文字入れの描画と当たり判定。
- * 位置・大きさは画像に対する割合で持つので、プレビューと保存で同じ見た目になる。
- *   x, y  : 文字のかたまりの中心（画像の幅・高さに対する 0〜1）
- *   size  : 文字の大きさ（画像の短辺に対する割合）
+ * 位置・大きさは元の画像に対する割合で持つので、プレビューと保存で同じ見た目になる。
+ * 画像を回転しても、文字は画面上でまっすぐのまま（位置だけが画像についていく）。
+ *   x, y  : 文字のかたまりの中心（元の画像の幅・高さに対する 0〜1）
+ *   size  : 文字の大きさ（元の画像の短辺に対する割合）
  *   strokeWidth : 縁取りの太さ（文字の大きさに対する割合、0 で縁取りなし）
  */
 
@@ -24,28 +25,28 @@ export function fontOf(op, px) {
   return `${font.weight} ${px}px ${font.family}`
 }
 
-function layout(ctx, op, width, height) {
-  const px = Math.max(1, op.size * Math.min(width, height))
+/** @param {object} view geometry.js の makeView で作ったビュー */
+function layout(ctx, op, view) {
+  const px = Math.max(1, op.size * view.unit)
   ctx.font = fontOf(op, px)
   const lines = String(op.text).split('\n')
   const widths = lines.map((line) => ctx.measureText(line).width)
   const blockW = Math.max(1, ...widths)
   const blockH = lines.length * px * LINE_HEIGHT
-  const cx = op.x * width
-  const cy = op.y * height
+  const [cx, cy] = view.toPx(op.x, op.y)
   return { px, lines, blockW, blockH, cx, cy, left: cx - blockW / 2, top: cy - blockH / 2 }
 }
 
 /** 文字が占める範囲（背景帯・縁取りを含む）を canvas の画素座標で返す */
-export function textBounds(ctx, op, width, height) {
-  const l = layout(ctx, op, width, height)
+export function textBounds(ctx, op, view) {
+  const l = layout(ctx, op, view)
   const pad = op.band ? l.px * BAND_PADDING : (op.strokeWidth || 0) * l.px
   return { x: l.left - pad, y: l.top - pad, w: l.blockW + pad * 2, h: l.blockH + pad * 2 }
 }
 
-export function drawText(ctx, op, width, height) {
+export function drawText(ctx, op, view) {
   if (!String(op.text).trim()) return
-  const l = layout(ctx, op, width, height)
+  const l = layout(ctx, op, view)
   ctx.save()
   if (op.band) {
     const pad = l.px * BAND_PADDING
