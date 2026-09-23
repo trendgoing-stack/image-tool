@@ -38,6 +38,7 @@ if (swVersion !== appVersion) {
 const listed = new Set([...sw.matchAll(/'\.\/([^']*)'/g)].map((m) => m[1]).filter(Boolean))
 
 function walk(dir) {
+  if (!existsSync(dir)) return []
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name)
     return statSync(path).isDirectory() ? walk(path) : [relative(ROOT, path).replaceAll('\\', '/')]

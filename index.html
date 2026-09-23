@@ -36,14 +36,9 @@
       </ul>
     </section>
 
-    <div class="segmented mode-switch" role="radiogroup" aria-label="モード">
-      <label><input type="radio" name="app-mode" value="batch" checked><span>まとめて処理</span></label>
-      <label><input type="radio" name="app-mode" value="edit"><span>1枚を編集</span></label>
-    </div>
-
-    <section class="card" id="editor-section" hidden>
+    <section class="card" id="editor-section">
       <h2>1. 画像を選んで編集</h2>
-      <p class="hint editor-intro">ぼかし・モザイク・塗りつぶし・文字入れができます。編集した画像は、下の設定でリサイズ・圧縮して保存します。</p>
+      <p class="hint editor-intro">回転・切り取り、ぼかし・モザイク・塗りつぶし、文字入れができます。編集した画像は、下の設定でリサイズ・圧縮して保存します。</p>
       <label class="button primary file-button">
         画像を選択
         <input id="edit-file-input" type="file" accept="image/*" hidden>
@@ -144,18 +139,6 @@
       </div>
     </section>
 
-    <section class="card" id="batch-section">
-      <h2>1. 画像を選ぶ</h2>
-      <label class="button primary file-button">
-        画像を選択
-        <input id="file-input" type="file" accept="image/*" multiple hidden>
-      </label>
-      <div class="summary-row">
-        <p id="file-summary" class="muted">まだ選択されていません</p>
-        <button id="batch-clear" class="button small" type="button" hidden>選択を解除</button>
-      </div>
-    </section>
-
     <section class="card" id="settings">
       <h2>2. 設定</h2>
 
@@ -252,24 +235,8 @@
 
     <section class="card">
       <h2>3. 処理と保存</h2>
-      <div class="row">
-        <button id="process-button" class="button primary" type="button" disabled>処理する</button>
-        <button id="cancel-button" class="button" type="button" hidden>中止</button>
-      </div>
-      <div id="progress-wrap" hidden>
-        <progress id="progress-bar" max="1" value="0"></progress>
-      </div>
+      <button id="process-button" class="button primary" type="button" disabled>編集した画像を処理する</button>
       <p id="progress" class="muted" aria-live="polite"></p>
-
-      <div id="bulk" class="bulk" hidden>
-        <p id="bulk-summary" class="bulk-summary"></p>
-        <div class="bulk-actions">
-          <button id="share-all-button" class="button" type="button">まとめて共有</button>
-          <button id="zip-button" class="button" type="button">ZIPで保存</button>
-        </div>
-        <p class="hint">「まとめて共有」→「画像を保存」で写真アプリへ。ZIPはファイルアプリに保存するときに使います</p>
-      </div>
-
       <ul id="results" class="results"></ul>
     </section>
 
@@ -302,15 +269,14 @@
     <div class="help-body">
       <h3>使い方</h3>
       <ol>
-        <li>「画像を選択」で写真を選びます（複数まとめて選べます）</li>
+        <li>「画像を選択」で写真を1枚選び、回転・切り取りや、ぼかし・文字入れなどの編集をします（編集しなくてもかまいません）</li>
         <li>リサイズ・出力形式・画質などを設定します</li>
-        <li>「処理する」を押し、終わったら「保存」を押します</li>
+        <li>「編集した画像を処理する」を押し、終わったら「保存」を押します</li>
       </ol>
-      <p>「保存」を押すと共有シートが開きます。「画像を保存」で写真アプリに、「"ファイル"に保存」でファイルアプリに保存されます。2枚以上なら「まとめて共有」や「ZIPで保存」も使えます。</p>
+      <p>「保存」を押すと共有シートが開きます。「画像を保存」で写真アプリに、「"ファイル"に保存」でファイルアプリに保存されます。</p>
 
-      <h3>1枚を編集（回転・切り取り・ぼかし・モザイク・文字入れ）</h3>
+      <h3>編集（回転・切り取り・ぼかし・モザイク・文字入れ）</h3>
       <ul>
-        <li>上の「1枚を編集」に切り替えて画像を選ぶと、回転・反転・切り取り、ぼかし・モザイク・塗りつぶし・文字入れができます</li>
         <li>「回転・切取」では、90°ずつの回転と左右・上下の反転、切り取りができます。切り取りの比率には、SNSなどの用途の目安を表示しています</li>
         <li>ぼかしや文字は、回転・切り取りしたあとの画像に入れます。先に入れてから回転・切り取りしても、写真の同じ場所に残ります（切り取りで範囲の外に出た部分は保存されません）</li>
         <li>回転しても、文字は画面上でまっすぐのままです</li>

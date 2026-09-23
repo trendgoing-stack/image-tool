@@ -8,7 +8,7 @@
  *  3. 画面に「更新があります」を出し、タップされたら新しい SW に切り替えて再読み込みする
  *  4. 切り替わった SW が古いバージョンのキャッシュを削除する
  */
-const VERSION = '0.5.0'
+const VERSION = '0.6.0'
 const CACHE_PREFIX = 'image-tool-'
 const CACHE_NAME = `${CACHE_PREFIX}v${VERSION}`
 
@@ -21,7 +21,6 @@ const ASSETS = [
   './js/main.js',
   './js/version.js',
   './js/sw-register.js',
-  './js/core/batch.js',
   './js/core/decode.js',
   './js/core/encode.js',
   './js/core/limits.js',
@@ -37,7 +36,6 @@ const ASSETS = [
   './js/editor/text.js',
   './js/output/naming.js',
   './js/output/share.js',
-  './js/output/zip.js',
   './js/settings/model.js',
   './js/settings/presets.js',
   './js/ui/compare.js',
@@ -45,7 +43,6 @@ const ASSETS = [
   './js/ui/resultList.js',
   './js/ui/settingsForm.js',
   './js/ui/toast.js',
-  './vendor/fflate/fflate.js',
   './icons/apple-touch-icon.png',
   './icons/icon-192.png',
   './icons/icon-512.png',

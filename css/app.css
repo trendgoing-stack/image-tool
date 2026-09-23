@@ -209,17 +209,6 @@ fieldset.disabled .png-reason { color: var(--text); }
 }
 .badge.warn { background: var(--warn-bg); color: var(--warn-text); }
 .badge.error { background: var(--error-bg); color: var(--error-text); }
-
-.row { display: flex; gap: 8px; }
-.row .button.primary { flex: 1; }
-
-progress { width: 100%; height: 6px; margin-top: 10px; accent-color: var(--accent); }
-
-.bulk { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
-.bulk-summary { margin: 0 0 8px; font-size: 14px; }
-.bulk-actions { display: flex; gap: 8px; }
-.bulk-actions .button { flex: 1; }
-
 .result { display: flex; gap: 10px; }
 .result-body { flex: 1; min-width: 0; }
 .result-thumbs {
@@ -388,8 +377,6 @@ progress { width: 100%; height: 6px; margin-top: 10px; accent-color: var(--accen
 .summary-row .muted { margin: 0; min-width: 0; word-break: break-all; }
 .summary-row .button { flex-shrink: 0; }
 
-.mode-switch { margin-bottom: 12px; }
-.mode-switch span { padding: 9px 4px; font-size: 15px; }
 .segmented.small span { font-size: 13px; padding: 6px 4px; }
 
 .editor { margin-top: 12px; }
